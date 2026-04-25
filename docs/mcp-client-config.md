@@ -84,6 +84,17 @@ docker run --rm -i --shm-size 2gb \
   chrome-devtools-mcp:latest
 ```
 
+## Test MCP server
+```bash
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}\n{"jsonrpc":"2.0","id":2,"me
+  thod":"tools/call","params":{"name":"new_page","arguments":{"url":"https://example.com"}}}\n' \
+    | docker run --rm -i -p 9224:9222 \
+        -v skills_chrome-cache:/home/node/.cache \
+        --env CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true \
+        chrome-devtools-mcp:latest \
+    2>/dev/null | jq
+```
+
 ---
 
 ## Building the image first

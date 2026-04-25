@@ -18,7 +18,6 @@ npm package — run the Chrome DevTools MCP server in a container without a loca
 | `Containerfile` / `Dockerfile` and compose file | The MCP server source code — lives at [ChromeDevTools/chrome-devtools-mcp](https://github.com/ChromeDevTools/chrome-devtools-mcp) |
 | Renovate config for automated version PRs | Publishing a pre-built image to a registry |
 | GitHub Actions CI (build → smoke → browser probe) | Multi-platform CI (tested on macOS Apple Silicon only) |
-| Branch protection guidance | Supporting non-Bookworm Debian bases |
 
 ---
 
@@ -67,9 +66,7 @@ and other clients.
 |---|---|
 | [docs/mcp-client-config.md](./docs/mcp-client-config.md) | MCP client configuration snippets |
 | [docs/versioning.md](./docs/versioning.md) | How the package version is pinned and updated by Renovate |
-| [docs/ci.md](./docs/ci.md) | CI pipeline overview and job descriptions |
 | [docs/limitations.md](./docs/limitations.md) | Known constraints: image size, platform coverage, Chromium vs Chrome |
-| [docs/branch-protection.md](./docs/branch-protection.md) | `gh` CLI commands to configure branch rules (Windows + Linux) |
 
 ---
 

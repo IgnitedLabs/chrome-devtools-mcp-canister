@@ -62,5 +62,4 @@ Node.js are installed via apt / NodeSource and only update on a manual
 ## No pre-built registry image
 
 The image is built locally only — no image is pushed to a container registry
-(e.g. ghcr.io). Reasons: simpler repo with no registry credentials required,
-and the ~600 MB size makes pulls slow. Users build from source.
+(e.g. ghcr.io).
