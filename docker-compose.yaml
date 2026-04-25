@@ -6,6 +6,8 @@ services:
       args:
         - CHROME_DEVTOOLS_MCP_VERSION=0.23.0
     image: chrome-devtools-mcp:0.23.0
+    tags:
+      - latest
     platform: linux/arm64
     stdin_open: true
     tty: false

@@ -11,7 +11,7 @@ Every client below launches the container as a subprocess — no separate
 
 ## Claude Desktop
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
+Edit `~/.claude.json`
 (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
@@ -33,10 +33,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 ## Claude Code
 
 ```bash
-claude mcp add chrome-devtools \
-  docker run --rm -i --shm-size 2gb \
-  --env CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true \
-  chrome-devtools-mcp:latest
+claude mcp add chrome-devtools '{"command":"docker","args":["run","--rm","-i","-p","127.0.0.1:9222:9222","-v","files_chrome-cache:/home/node/.cache","--shm-size","2gb","--env","CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true","--env","CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true","chrome-devtools-mcp:latest"]}'
 ```
 
 ## VS Code (`mcp.json`)
