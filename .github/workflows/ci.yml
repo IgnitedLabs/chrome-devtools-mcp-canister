@@ -179,6 +179,11 @@ jobs:
                   sys.exit(1)
               return json.loads(line)
 
+          def notify(msg):
+              # JSON-RPC notifications have no response — do not readline().
+              proc.stdin.write((json.dumps(msg) + "\n").encode())
+              proc.stdin.flush()
+
           # Step 1 — MCP handshake
           resp = send({
               "jsonrpc": "2.0", "id": 1, "method": "initialize",
@@ -190,8 +195,8 @@ jobs:
           })
           assert "result" in resp, f"initialize failed: {resp}"
 
-          # Notify server that client is ready
-          send({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+          # Notify server that client is ready (no response expected)
+          notify({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
 
           # Step 2 — Discover available tools
           resp = send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
