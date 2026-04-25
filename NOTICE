@@ -1,0 +1,68 @@
+chrome-devtools-mcp-canister
+Copyright [YEAR] [YOUR NAME OR ORGANISATION]
+
+Licensed under the Apache License, Version 2.0.
+
+========================================================================
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+========================================================================
+
+This project packages and runs the following third-party software inside
+a Docker container. This project only contains Docker infrastructure
+(Dockerfile, docker-compose.yaml, CI workflows, Renovate config). The
+source code of the packaged software is not included here and is subject
+to its own license terms.
+
+------------------------------------------------------------------------
+chrome-devtools-mcp
+------------------------------------------------------------------------
+Copyright 2024 Google LLC
+Licensed under the Apache License, Version 2.0
+Source: https://github.com/ChromeDevTools/chrome-devtools-mcp
+NPM:    https://www.npmjs.com/package/chrome-devtools-mcp
+
+------------------------------------------------------------------------
+Chromium
+------------------------------------------------------------------------
+Chromium is an open-source browser project. Portions are licensed under
+the BSD license and other open-source licenses. See
+https://chromium.googlesource.com/chromium/src/+/HEAD/LICENSE for the
+Chromium license. The Chromium binary in the container image is the
+Debian-packaged build of Chromium (package: chromium).
+
+------------------------------------------------------------------------
+Node.js
+------------------------------------------------------------------------
+Copyright Node.js contributors. All rights reserved.
+Licensed under the MIT License.
+Source: https://github.com/nodejs/node
+
+------------------------------------------------------------------------
+debian:bookworm-slim base image
+------------------------------------------------------------------------
+The base image contains software from the Debian project. Individual
+packages are subject to their own license terms. See
+https://www.debian.org/legal/licenses/ for details.
+
+========================================================================
+TRADEMARK NOTICES
+========================================================================
+
+"Chrome" and "Chromium" are trademarks of Google LLC.
+"Chrome DevTools" is a trademark of Google LLC.
+"Docker" is a trademark of Docker, Inc.
+"Node.js" is a trademark of the OpenJS Foundation.
+"Debian" is a registered trademark of Software in the Public Interest, Inc.
+
+This project is NOT affiliated with, endorsed by, or sponsored by
+Google LLC or any of its subsidiaries or affiliates. References to
+"Chrome DevTools" and related marks are used solely to identify the
+upstream software that this Docker infrastructure is compatible with,
+in accordance with Google's trademark fair use guidelines at
+https://www.google.com/permissions/trademark/rules.html
+
+This project provides Docker packaging infrastructure for use with the
+chrome-devtools-mcp™ npm package. "chrome-devtools-mcp" is a trademark
+of Google LLC.
+
+========================================================================

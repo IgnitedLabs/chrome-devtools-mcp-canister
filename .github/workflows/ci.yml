@@ -1,0 +1,268 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+# Only one CI run per PR branch at a time — cancel in-progress runs on new push.
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1: Build ─────────────────────────────────────────────────────────────
+  # ~5 min. Validates the Dockerfile, npm package availability, and that the
+  # Chromium apt package still installs cleanly on Debian Bookworm.
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # CI runs on x86_64 runners; the compose file targets linux/arm64.
+      # QEMU lets Docker build and run arm64 images on x86_64 hosts.
+      - name: Set up QEMU (arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Read version from Dockerfile
+        id: get-version
+        run: |
+          VERSION=$(grep 'ARG CHROME_DEVTOOLS_MCP_VERSION' Dockerfile | cut -d= -f2)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building chrome-devtools-mcp:$VERSION"
+
+      - name: Build image
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          docker compose build
+          # Also tag as :latest so smoke / browser-probe jobs can reference it
+          # without knowing the version number.
+          docker tag "chrome-devtools-mcp:$VERSION" chrome-devtools-mcp:latest
+
+      # Save the image to a tar archive so subsequent jobs can load it without
+      # rebuilding.  Scoped to this workflow run.
+      - name: Export image to tar
+        run: docker save chrome-devtools-mcp:latest | gzip > /tmp/image.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/image.tar.gz
+          retention-days: 1
+
+  # ── Job 2: MCP smoke test ────────────────────────────────────────────────────
+  # ~30 sec. Sends an MCP `initialize` request over stdio and asserts a valid
+  # JSON-RPC 2.0 response is returned.  This confirms the npm package starts,
+  # the Node.js runtime is healthy, and the MCP handshake works.
+  smoke:
+    name: MCP smoke test (initialize)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/image.tar.gz
+
+      - name: MCP initialize smoke test
+        timeout-minutes: 2
+        run: |
+          python3 - <<'EOF'
+          import subprocess, json, sys, time
+
+          proc = subprocess.Popen(
+              [
+                  "docker", "run", "--rm", "-i",
+                  "--platform", "linux/arm64",
+                  "--shm-size", "2gb",
+                  "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
+                  "--env", "CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true",
+                  "chrome-devtools-mcp:latest",
+              ],
+              stdin=subprocess.PIPE,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+          )
+
+          def send(msg):
+              proc.stdin.write((json.dumps(msg) + "\n").encode())
+              proc.stdin.flush()
+              line = proc.stdout.readline()
+              if not line:
+                  proc.terminate()
+                  err = proc.stderr.read().decode()
+                  print("STDERR:", err, file=sys.stderr)
+                  sys.exit(1)
+              return json.loads(line)
+
+          resp = send({
+              "jsonrpc": "2.0",
+              "id": 1,
+              "method": "initialize",
+              "params": {
+                  "protocolVersion": "2024-11-05",
+                  "capabilities": {},
+                  "clientInfo": {"name": "ci-smoke", "version": "1.0"},
+              },
+          })
+
+          assert "result" in resp, f"initialize failed: {resp}"
+          print("✓ initialize OK:", resp["result"].get("serverInfo", {}))
+          proc.terminate()
+          EOF
+
+  # ── Job 3: Browser probe ─────────────────────────────────────────────────────
+  # ~60 sec (timeout 120 s). Sends `initialized` then exercises `tools/list`,
+  # `new_tab` (or equivalent), and `navigate` tool calls.  This confirms
+  # Chromium actually launches and can navigate inside the container.
+  #
+  # NOTE: Tool names are validated at runtime via tools/list.  If the upstream
+  # API changes the tool name for "open a new page", the assertion adapts.
+  browser-probe:
+    name: Browser probe (Chrome launch + navigate)
+    runs-on: ubuntu-latest
+    needs: smoke
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/image.tar.gz
+
+      - name: Browser probe
+        timeout-minutes: 3
+        run: |
+          python3 - <<'EOF'
+          import subprocess, json, sys
+
+          proc = subprocess.Popen(
+              [
+                  "docker", "run", "--rm", "-i",
+                  "--platform", "linux/arm64",
+                  "--shm-size", "2gb",
+                  "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
+                  "--env", "CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true",
+                  "chrome-devtools-mcp:latest",
+              ],
+              stdin=subprocess.PIPE,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+          )
+
+          def send(msg):
+              proc.stdin.write((json.dumps(msg) + "\n").encode())
+              proc.stdin.flush()
+              line = proc.stdout.readline()
+              if not line:
+                  proc.terminate()
+                  err = proc.stderr.read().decode()
+                  print("STDERR:", err, file=sys.stderr)
+                  sys.exit(1)
+              return json.loads(line)
+
+          # Step 1 — MCP handshake
+          resp = send({
+              "jsonrpc": "2.0", "id": 1, "method": "initialize",
+              "params": {
+                  "protocolVersion": "2024-11-05",
+                  "capabilities": {},
+                  "clientInfo": {"name": "ci-probe", "version": "1.0"},
+              },
+          })
+          assert "result" in resp, f"initialize failed: {resp}"
+
+          # Notify server that client is ready
+          send({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+
+          # Step 2 — Discover available tools
+          resp = send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
+          assert "result" in resp, f"tools/list failed: {resp}"
+          tools = {t["name"] for t in resp["result"].get("tools", [])}
+          print("Available tools:", sorted(tools))
+
+          # Step 3 — Open a new page (tool name may vary across versions)
+          new_page_tool = next(
+              (t for t in tools if t in ("new_tab", "new_page", "navigate")),
+              None,
+          )
+          assert new_page_tool, f"No page-creation tool found in: {tools}"
+
+          resp = send({
+              "jsonrpc": "2.0", "id": 3,
+              "method": "tools/call",
+              "params": {"name": new_page_tool, "arguments": {}},
+          })
+          assert "error" not in resp, f"{new_page_tool} failed: {resp}"
+          print(f"✓ {new_page_tool} OK")
+
+          # Step 4 — Navigate (only if new_page_tool was not already navigate)
+          if new_page_tool != "navigate" and "navigate" in tools:
+              resp = send({
+                  "jsonrpc": "2.0", "id": 4,
+                  "method": "tools/call",
+                  "params": {
+                      "name": "navigate",
+                      "arguments": {"url": "https://example.com"},
+                  },
+              })
+              assert "error" not in resp, f"navigate failed: {resp}"
+              print("✓ navigate OK")
+
+          proc.terminate()
+          print("✓ Browser probe passed")
+          EOF
+
+  # ── Auto-merge (Renovate PRs only) ──────────────────────────────────────────
+  # Runs only when all three jobs pass AND the actor is Renovate.
+  # GitHub branch protection enforces the three required checks before the
+  # merge is actually allowed — this step just enables the auto-merge queue.
+  auto-merge:
+    name: Enable auto-merge for Renovate PRs
+    runs-on: ubuntu-latest
+    needs: [build, smoke, browser-probe]
+    if: github.actor == 'renovate[bot]'
+
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash "${{ github.event.pull_request.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

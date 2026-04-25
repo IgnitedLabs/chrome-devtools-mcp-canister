@@ -1,0 +1,24 @@
+services:
+  chrome-devtools:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - CHROME_DEVTOOLS_MCP_VERSION=0.23.0
+    image: chrome-devtools-mcp:0.23.0
+    platform: linux/arm64
+    stdin_open: true
+    tty: false
+    shm_size: '2gb'
+    ports:
+      - "0.0.0.0:${CDP_PORT:-9222}:9222"
+    environment:
+      - CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true
+      - CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true
+    volumes:
+      - chrome-cache:/home/node/.cache
+    env_file:
+      - .env
+
+volumes:
+  chrome-cache:

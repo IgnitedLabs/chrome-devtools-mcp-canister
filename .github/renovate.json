@@ -1,0 +1,56 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+
+  // Debian base image updates require manual compatibility testing
+  // (NodeSource setup script, Chromium apt availability, shared libs).
+  // Bookworm LTS runs until 2029 — revisit then.
+  "ignoreDeps": ["debian"],
+
+  "packageRules": [
+    {
+      "matchPackageNames": ["chrome-devtools-mcp"],
+      // Auto-merge is controlled by GitHub branch protection (all CI must
+      // pass), NOT by Renovate.  Renovate only creates the PR.
+      "automerge": false,
+      "labels": ["dependencies", "chrome-devtools-mcp"],
+      "commitMessageTopic": "chrome-devtools-mcp"
+    }
+  ],
+
+  "customManagers": [
+    {
+      // Track the version in the Dockerfile ARG.
+      // Matches: ARG CHROME_DEVTOOLS_MCP_VERSION=0.23.0
+      "customType": "regex",
+      "fileMatch": ["^Dockerfile$"],
+      "matchStrings": [
+        "ARG CHROME_DEVTOOLS_MCP_VERSION=(?<currentValue>[\\d.]+)"
+      ],
+      "depNameTemplate": "chrome-devtools-mcp",
+      "datasourceTemplate": "npm"
+    },
+    {
+      // Track the version in the compose image tag.
+      // Matches: image: chrome-devtools-mcp:0.23.0
+      "customType": "regex",
+      "fileMatch": ["^docker-compose\\.yaml$"],
+      "matchStrings": [
+        "image: chrome-devtools-mcp:(?<currentValue>[\\d.]+)"
+      ],
+      "depNameTemplate": "chrome-devtools-mcp",
+      "datasourceTemplate": "npm"
+    },
+    {
+      // Also keep the build arg inside docker-compose.yaml in sync.
+      // Matches: - CHROME_DEVTOOLS_MCP_VERSION=0.23.0
+      "customType": "regex",
+      "fileMatch": ["^docker-compose\\.yaml$"],
+      "matchStrings": [
+        "- CHROME_DEVTOOLS_MCP_VERSION=(?<currentValue>[\\d.]+)"
+      ],
+      "depNameTemplate": "chrome-devtools-mcp",
+      "datasourceTemplate": "npm"
+    }
+  ]
+}
