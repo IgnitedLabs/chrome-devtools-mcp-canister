@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - Dockerfile
+  workflow_dispatch:
 
 jobs:
   tag-and-release:
@@ -24,7 +25,6 @@ jobs:
         run: |
           VERSION=$(grep 'ARG CHROME_DEVTOOLS_MCP_VERSION' Dockerfile | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Check if tag already exists
         id: tag-check
@@ -45,13 +45,12 @@ jobs:
           git push origin "v${{ steps.version.outputs.version }}"
 
       - name: Set up Docker Buildx
-        if: steps.tag-check.outputs.exists == 'false'
         uses: docker/setup-buildx-action@v4
 
       - name: Build image and generate provenance artefact
-        if: steps.tag-check.outputs.exists == 'false'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          ARCHIVE="chrome-devtools-mcp-canister-v${VERSION}-linux-amd64.tar.gz"
           docker buildx build \
             --platform linux/amd64 \
             --load \
@@ -59,17 +58,17 @@ jobs:
             -t "chrome-devtools-mcp:v$VERSION" \
             -t chrome-devtools-mcp:latest \
             .
-          ARCHIVE="chrome-devtools-mcp-v${VERSION}-linux-amd64.tar.gz"
           docker save "chrome-devtools-mcp:v$VERSION" | gzip > "/tmp/$ARCHIVE"
           sha256sum "/tmp/$ARCHIVE" > "/tmp/${ARCHIVE}.sha256"
           echo "SHA-256: $(cat /tmp/${ARCHIVE}.sha256)"
-          echo "archive=$ARCHIVE" >> "$GITHUB_ENV"
 
-      - name: Create GitHub Release
-        if: steps.tag-check.outputs.exists == 'false'
+      - name: Create or update GitHub Release
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          ARCHIVE="chrome-devtools-mcp-v${VERSION}-linux-amd64.tar.gz"
+          ARCHIVE="chrome-devtools-mcp-canister-v${VERSION}-linux-amd64.tar.gz"
+          # Delete existing release if present (e.g. from a prior partial run)
+          # so we can re-upload assets with the correct name.
+          gh release delete "v$VERSION" --yes 2>/dev/null || true
           gh release create "v$VERSION" \
             --title "v$VERSION" \
             --notes "Packages [chrome-devtools-mcp v${VERSION}](https://www.npmjs.com/package/chrome-devtools-mcp/v/${VERSION})." \
