@@ -1,0 +1,29 @@
+dockerfile:
+  - changed-files:
+    - any-glob-to-any-file: "Dockerfile"
+
+docker-compose:
+  - changed-files:
+    - any-glob-to-any-file: "docker-compose.yaml"
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file: ".github/workflows/**"
+
+renovate-config:
+  - changed-files:
+    - any-glob-to-any-file: ".github/renovate.json5"
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "docs/**"
+      - "README.md"
+      - "NOTICE"
+      - "LICENSE"
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "Dockerfile"
+      - "docker-compose.yaml"
