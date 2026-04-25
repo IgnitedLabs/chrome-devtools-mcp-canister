@@ -1,0 +1,28 @@
+name: CI (skip)
+
+# Mirrors the required check names from ci.yml for PRs that don't touch
+# Docker files. Without this, required status checks stay "Expected" forever
+# on docs/CI/config PRs, blocking all merges.
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - Dockerfile
+      - docker-compose.yaml
+
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No Dockerfile or docker-compose.yaml changes — build skipped."
+
+  test:
+    name: MCP smoke test + Browser probe
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No Dockerfile or docker-compose.yaml changes — tests skipped."
