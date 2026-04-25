@@ -83,7 +83,7 @@ See [NOTICE](./NOTICE) for complete third-party attribution.
 
 ## License
 
-Copyright [YEAR] [YOUR NAME OR ORGANISATION]
+Copyright [2026] [IgnitedProteus]
 
 Licensed under the [Apache License, Version 2.0](./LICENSE).
 
