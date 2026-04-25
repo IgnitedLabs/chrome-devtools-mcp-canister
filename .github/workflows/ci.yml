@@ -137,7 +137,7 @@ jobs:
   browser-probe:
     name: Browser probe (Chrome launch + navigate)
     runs-on: ubuntu-latest
-    needs: smoke
+    needs: build
 
     steps:
       - name: Download image artifact
@@ -254,6 +254,6 @@ jobs:
 
     steps:
       - name: Enable auto-merge
-        run: gh pr merge --auto --squash "${{ github.event.pull_request.number }}"
+        run: gh pr merge --auto --squash --repo IgnitedLabs/chrome-devtools-mcp-canister "${{ github.event.pull_request.number }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
