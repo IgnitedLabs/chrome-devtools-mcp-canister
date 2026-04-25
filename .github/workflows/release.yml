@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     branches: [main]
+    paths:
+      - Dockerfile
 
 jobs:
   tag-and-release:
@@ -42,12 +44,37 @@ jobs:
             -m "chrome-devtools-mcp v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
 
+      - name: Set up Docker Buildx
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image and generate provenance artefact
+        if: steps.tag-check.outputs.exists == 'false'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          docker buildx build \
+            --platform linux/amd64 \
+            --load \
+            --build-arg CHROME_DEVTOOLS_MCP_VERSION="$VERSION" \
+            -t "chrome-devtools-mcp:v$VERSION" \
+            -t chrome-devtools-mcp:latest \
+            .
+          ARCHIVE="chrome-devtools-mcp-v${VERSION}-linux-amd64.tar.gz"
+          docker save "chrome-devtools-mcp:v$VERSION" | gzip > "/tmp/$ARCHIVE"
+          sha256sum "/tmp/$ARCHIVE" > "/tmp/${ARCHIVE}.sha256"
+          echo "SHA-256: $(cat /tmp/${ARCHIVE}.sha256)"
+          echo "archive=$ARCHIVE" >> "$GITHUB_ENV"
+
       - name: Create GitHub Release
         if: steps.tag-check.outputs.exists == 'false'
         run: |
-          gh release create "v${{ steps.version.outputs.version }}" \
-            --title "v${{ steps.version.outputs.version }}" \
-            --notes "Packages [chrome-devtools-mcp v${{ steps.version.outputs.version }}](https://www.npmjs.com/package/chrome-devtools-mcp/v/${{ steps.version.outputs.version }})." \
-            --latest
+          VERSION="${{ steps.version.outputs.version }}"
+          ARCHIVE="chrome-devtools-mcp-v${VERSION}-linux-amd64.tar.gz"
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes "Packages [chrome-devtools-mcp v${VERSION}](https://www.npmjs.com/package/chrome-devtools-mcp/v/${VERSION})." \
+            --latest \
+            "/tmp/$ARCHIVE" \
+            "/tmp/${ARCHIVE}.sha256"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
