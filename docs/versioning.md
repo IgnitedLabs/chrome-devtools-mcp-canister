@@ -10,7 +10,7 @@ Containerfile / Dockerfile
     ARG CHROME_DEVTOOLS_MCP_VERSION=0.23.0
 
 docker-compose.yaml
-    image: chrome-devtools-mcp:0.23.0
+    image: chrome-devtools-mcp:v0.23.0
     - CHROME_DEVTOOLS_MCP_VERSION=0.23.0
 ```
 
