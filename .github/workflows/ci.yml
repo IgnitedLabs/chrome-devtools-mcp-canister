@@ -3,9 +3,6 @@ name: CI
 on:
   pull_request:
     branches: [main]
-    paths:
-      - Dockerfile
-      - docker-compose.yaml
 
 # Only one CI run per PR branch at a time — cancel in-progress runs on new push.
 concurrency:

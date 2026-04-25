@@ -11,14 +11,6 @@
 
 All four components are **runtime dependencies** — none can be eliminated.
 
-The switch from `ubuntu:24.04` + Google Chrome stable to
-`debian:bookworm-slim` + Chromium reduced the image by ~900 MB.
-This is the final configuration; no further size optimisation is planned.
-
-A multi-stage build would save ~50–100 MB by discarding build tools
-(`curl`, `gnupg`, `dirmngr`, apt lists). Not worth pursuing — the dominant
-costs are all runtime components that must exist in the final layer.
-
 ---
 
 ## Platform coverage
@@ -61,5 +53,4 @@ Node.js are installed via apt / NodeSource and only update on a manual
 
 ## No pre-built registry image
 
-The image is built locally only — no image is pushed to a container registry
-(e.g. ghcr.io).
+The image is built locally only — no image is pushed to a container registry.
