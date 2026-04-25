@@ -15,6 +15,14 @@
       "automerge": false,
       "labels": ["dependencies", "chrome-devtools-mcp"],
       "commitMessageTopic": "chrome-devtools-mcp"
+    },
+    {
+      // Group all GitHub Actions updates into a single PR to avoid
+      // one CI run per action bump.
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions dependencies",
+      "automerge": false,
+      "labels": ["dependencies", "github-actions"]
     }
   ],
 

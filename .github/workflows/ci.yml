@@ -11,8 +11,9 @@ concurrency:
 
 jobs:
   # ── Job 1: Build ─────────────────────────────────────────────────────────────
-  # ~5 min. Validates the Dockerfile, npm package availability, and that the
-  # Chromium apt package still installs cleanly on Debian Bookworm.
+  # ~1-2 min on cache hit, ~5 min cold. Validates the Dockerfile, npm package
+  # availability, and that the Chromium apt package still installs cleanly on
+  # Debian Bookworm. Built for linux/amd64 (native on CI runners — no QEMU).
   build:
     name: Build image
     runs-on: ubuntu-latest
@@ -23,15 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # CI runs on x86_64 runners; the compose file targets linux/arm64.
-      # QEMU lets Docker build and run arm64 images on x86_64 hosts.
-      - name: Set up QEMU (arm64 emulation)
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Read version from Dockerfile
         id: get-version
@@ -43,10 +37,18 @@ jobs:
       - name: Build image
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
-          docker compose build
-          # Also tag as :latest so smoke / browser-probe jobs can reference it
-          # without knowing the version number.
-          docker tag "chrome-devtools-mcp:$VERSION" chrome-devtools-mcp:latest
+          # Build for linux/amd64 — native on CI runners, no QEMU needed.
+          # The compose file targets linux/arm64 for local Apple Silicon use;
+          # CI overrides to amd64 for speed. Chromium is available for both.
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=gha \
+            --cache-to   type=gha,mode=max \
+            --load \
+            --build-arg CHROME_DEVTOOLS_MCP_VERSION="$VERSION" \
+            -t "chrome-devtools-mcp:$VERSION" \
+            -t chrome-devtools-mcp:latest \
+            .
 
       # Save the image to a tar archive so subsequent jobs can load it without
       # rebuilding.  Scoped to this workflow run.
@@ -70,14 +72,6 @@ jobs:
     needs: build
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU (arm64 emulation)
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Download image artifact
         uses: actions/download-artifact@v4
         with:
@@ -91,12 +85,11 @@ jobs:
         timeout-minutes: 2
         run: |
           python3 - <<'EOF'
-          import subprocess, json, sys, time
+          import subprocess, json, sys
 
           proc = subprocess.Popen(
               [
                   "docker", "run", "--rm", "-i",
-                  "--platform", "linux/arm64",
                   "--shm-size", "2gb",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true",
@@ -135,9 +128,9 @@ jobs:
           EOF
 
   # ── Job 3: Browser probe ─────────────────────────────────────────────────────
-  # ~60 sec (timeout 120 s). Sends `initialized` then exercises `tools/list`,
-  # `new_tab` (or equivalent), and `navigate` tool calls.  This confirms
-  # Chromium actually launches and can navigate inside the container.
+  # ~60 sec (timeout 3 min). Sends `initialized` then exercises `tools/list`,
+  # a page-creation tool, and `navigate`.  Confirms Chromium actually launches
+  # and navigates inside the container.
   #
   # NOTE: Tool names are validated at runtime via tools/list.  If the upstream
   # API changes the tool name for "open a new page", the assertion adapts.
@@ -147,14 +140,6 @@ jobs:
     needs: smoke
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU (arm64 emulation)
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Download image artifact
         uses: actions/download-artifact@v4
         with:
@@ -173,7 +158,6 @@ jobs:
           proc = subprocess.Popen(
               [
                   "docker", "run", "--rm", "-i",
-                  "--platform", "linux/arm64",
                   "--shm-size", "2gb",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true",
