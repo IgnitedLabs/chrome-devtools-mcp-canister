@@ -3,6 +3,9 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    paths:
+      - Dockerfile
+      - docker-compose.yaml
 
 # Only one CI run per PR branch at a time — cancel in-progress runs on new push.
 concurrency:
@@ -19,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get-version.outputs.version }}
+      artifact: ${{ steps.get-version.outputs.artifact }}
 
     steps:
       - name: Checkout
@@ -32,7 +36,8 @@ jobs:
         run: |
           VERSION=$(grep 'ARG CHROME_DEVTOOLS_MCP_VERSION' Dockerfile | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building chrome-devtools-mcp:$VERSION"
+          echo "artifact=chrome-devtools-mcp-v${VERSION}-linux-amd64" >> "$GITHUB_OUTPUT"
+          echo "Building chrome-devtools-mcp:v$VERSION"
 
       - name: Build image
         run: |
@@ -46,28 +51,36 @@ jobs:
             --cache-to   type=gha,mode=max \
             --load \
             --build-arg CHROME_DEVTOOLS_MCP_VERSION="$VERSION" \
-            -t "chrome-devtools-mcp:$VERSION" \
+            -t "chrome-devtools-mcp:v$VERSION" \
             -t chrome-devtools-mcp:latest \
             .
 
-      # Save the image to a tar archive so subsequent jobs can load it without
-      # rebuilding.  Scoped to this workflow run.
-      - name: Export image to tar
-        run: docker save chrome-devtools-mcp:latest | gzip > /tmp/image.tar.gz
+      # Save the image to a tar archive so the test job can load it without
+      # rebuilding. Generate a SHA-256 checksum for provenance validation.
+      # Scoped to this workflow run.
+      - name: Export image to tar and generate checksum
+        run: |
+          docker save chrome-devtools-mcp:latest | gzip > /tmp/image.tar.gz
+          sha256sum /tmp/image.tar.gz > /tmp/image.tar.gz.sha256
+          echo "SHA-256: $(cat /tmp/image.tar.gz.sha256)"
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v7
         with:
-          name: docker-image
-          path: /tmp/image.tar.gz
+          name: ${{ steps.get-version.outputs.artifact }}
+          path: |
+            /tmp/image.tar.gz
+            /tmp/image.tar.gz.sha256
           retention-days: 1
 
-  # ── Job 2: MCP smoke test ────────────────────────────────────────────────────
-  # ~30 sec. Sends an MCP `initialize` request over stdio and asserts a valid
-  # JSON-RPC 2.0 response is returned.  This confirms the npm package starts,
-  # the Node.js runtime is healthy, and the MCP handshake works.
-  smoke:
-    name: MCP smoke test (initialize)
+  # ── Job 2: MCP smoke test + Browser probe ────────────────────────────────────
+  # Downloads the image artifact once, verifies its SHA-256 checksum, then runs
+  # both the MCP initialize smoke test (~30 sec) and the full browser probe
+  # (~60 sec) sequentially in a single job.  This avoids downloading and loading
+  # the image twice while keeping total runtime shorter than two parallel jobs
+  # (each of which paid the artifact-download + docker-load overhead separately).
+  test:
+    name: MCP smoke test + Browser probe
     runs-on: ubuntu-latest
     needs: build
 
@@ -75,8 +88,13 @@ jobs:
       - name: Download image artifact
         uses: actions/download-artifact@v8
         with:
-          name: docker-image
+          name: ${{ needs.build.outputs.artifact }}
           path: /tmp
+
+      - name: Verify checksum
+        run: |
+          cd /tmp
+          sha256sum -c image.tar.gz.sha256
 
       - name: Load image
         run: docker load < /tmp/image.tar.gz
@@ -127,29 +145,7 @@ jobs:
           proc.terminate()
           EOF
 
-  # ── Job 3: Browser probe ─────────────────────────────────────────────────────
-  # ~60 sec (timeout 3 min). Sends `initialized` then exercises `tools/list`,
-  # a page-creation tool, and `navigate`.  Confirms Chromium actually launches
-  # and navigates inside the container.
-  #
-  # NOTE: Tool names are validated at runtime via tools/list.  If the upstream
-  # API changes the tool name for "open a new page", the assertion adapts.
-  browser-probe:
-    name: Browser probe (Chrome launch + navigate)
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download image artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: docker-image
-          path: /tmp
-
-      - name: Load image
-        run: docker load < /tmp/image.tar.gz
-
-      - name: Browser probe
+      - name: Browser probe (Chrome launch + navigate)
         timeout-minutes: 3
         run: |
           python3 - <<'EOF'
@@ -237,13 +233,13 @@ jobs:
           EOF
 
   # ── Auto-merge (Renovate PRs only) ──────────────────────────────────────────
-  # Runs only when all three jobs pass AND the actor is Renovate.
-  # GitHub branch protection enforces the three required checks before the
+  # Runs only when all jobs pass AND the actor is Renovate.
+  # GitHub branch protection enforces the required checks before the
   # merge is actually allowed — this step just enables the auto-merge queue.
   auto-merge:
     name: Enable auto-merge for Renovate PRs
     runs-on: ubuntu-latest
-    needs: [build, smoke, browser-probe]
+    needs: [build, test]
     # Check PR author, not workflow trigger actor — re-runs change github.actor
     # to whoever triggered them, breaking the condition.
     if: github.event.pull_request.user.login == 'renovate[bot]'
