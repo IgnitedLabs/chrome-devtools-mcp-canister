@@ -9,7 +9,7 @@
 
   "packageRules": [
     {
-      "matchPackageNames": ["chrome-devtools-mcp-canister"],
+      "matchPackageNames": ["chrome-devtools-mcp"],
       // Auto-merge is controlled by GitHub branch protection (all CI must
       // pass), NOT by Renovate.  Renovate only creates the PR.
       "automerge": false,
@@ -31,33 +31,33 @@
       // Track the version in the Dockerfile ARG.
       // Matches: ARG CHROME_DEVTOOLS_MCP_VERSION=0.23.0
       "customType": "regex",
-      "fileMatch": ["^Dockerfile$"],
+      "managerFilePatterns": ["/^Dockerfile$/"],
       "matchStrings": [
         "ARG CHROME_DEVTOOLS_MCP_VERSION=(?<currentValue>[\\d.]+)"
       ],
-      "depNameTemplate": "chrome-devtools-mcp-canister",
+      "depNameTemplate": "chrome-devtools-mcp",
       "datasourceTemplate": "npm"
     },
     {
       // Track the version in the compose image tag.
-      // Matches: image: chrome-devtools-mcp:0.23.0
+      // Matches: image: chrome-devtools-mcp-canister:v0.23.0
       "customType": "regex",
-      "fileMatch": ["^docker-compose\\.yaml$"],
+      "managerFilePatterns": ["/^docker-compose\\.yaml$/"],
       "matchStrings": [
-        "image: chrome-devtools-mcp-canister:(?<currentValue>[\\d.]+)"
+        "image: chrome-devtools-mcp-canister:v(?<currentValue>[\\d.]+)"
       ],
-      "depNameTemplate": "chrome-devtools-mcp-canister",
+      "depNameTemplate": "chrome-devtools-mcp",
       "datasourceTemplate": "npm"
     },
     {
       // Also keep the build arg inside docker-compose.yaml in sync.
       // Matches: - CHROME_DEVTOOLS_MCP_VERSION=0.23.0
       "customType": "regex",
-      "fileMatch": ["^docker-compose\\.yaml$"],
+      "managerFilePatterns": ["/^docker-compose\\.yaml$/"],
       "matchStrings": [
         "- CHROME_DEVTOOLS_MCP_VERSION=(?<currentValue>[\\d.]+)"
       ],
-      "depNameTemplate": "chrome-devtools-mcp-canister",
+      "depNameTemplate": "chrome-devtools-mcp",
       "datasourceTemplate": "npm"
     }
   ]
