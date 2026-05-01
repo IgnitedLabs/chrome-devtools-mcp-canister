@@ -55,10 +55,10 @@ jobs:
             --platform linux/amd64 \
             --load \
             --build-arg CHROME_DEVTOOLS_MCP_VERSION="$VERSION" \
-            -t "chrome-devtools-mcp:v$VERSION" \
-            -t chrome-devtools-mcp:latest \
+            -t "chrome-devtools-mcp-canister:v$VERSION" \
+            -t chrome-devtools-mcp-canister:latest \
             .
-          docker save "chrome-devtools-mcp:v$VERSION" | gzip > "/tmp/$ARCHIVE"
+          docker save "chrome-devtools-mcp-canister:v$VERSION" | gzip > "/tmp/$ARCHIVE"
           sha256sum "/tmp/$ARCHIVE" > "/tmp/${ARCHIVE}.sha256"
           echo "SHA-256: $(cat /tmp/${ARCHIVE}.sha256)"
 
