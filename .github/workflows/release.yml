@@ -41,7 +41,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "v${{ steps.version.outputs.version }}" \
-            -m "chrome-devtools-mcp v${{ steps.version.outputs.version }}"
+            -m "chrome-devtools-mcp-canister v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
 
       - name: Set up Docker Buildx
@@ -55,10 +55,10 @@ jobs:
             --platform linux/amd64 \
             --load \
             --build-arg CHROME_DEVTOOLS_MCP_VERSION="$VERSION" \
-            -t "chrome-devtools-mcp:v$VERSION" \
-            -t chrome-devtools-mcp:latest \
+            -t "chrome-devtools-mcp-canister:v$VERSION" \
+            -t chrome-devtools-mcp-canister:latest \
             .
-          docker save "chrome-devtools-mcp:v$VERSION" | gzip > "/tmp/$ARCHIVE"
+          docker save "chrome-devtools-mcp-canister:v$VERSION" | gzip > "/tmp/$ARCHIVE"
           sha256sum "/tmp/$ARCHIVE" > "/tmp/${ARCHIVE}.sha256"
           echo "SHA-256: $(cat /tmp/${ARCHIVE}.sha256)"
 
@@ -71,7 +71,7 @@ jobs:
           gh release delete "v$VERSION" --yes 2>/dev/null || true
           gh release create "v$VERSION" \
             --title "v$VERSION" \
-            --notes "Packages [chrome-devtools-mcp v${VERSION}](https://www.npmjs.com/package/chrome-devtools-mcp/v/${VERSION})." \
+            --notes "Packages [chrome-devtools-mcp-canister v${VERSION}](https://www.npmjs.com/package/chrome-devtools-mcp/v/${VERSION})." \
             --latest \
             "/tmp/$ARCHIVE" \
             "/tmp/${ARCHIVE}.sha256"

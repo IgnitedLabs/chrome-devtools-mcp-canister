@@ -18,7 +18,7 @@ labels: bug
 ## Environment
 - OS / Docker engine: <!-- e.g. macOS 15 / Docker Desktop 4.x -->
 - Architecture: <!-- linux/arm64 or linux/amd64 -->
-- `chrome-devtools-mcp` version: <!-- from Dockerfile ARG -->
+- `chrome-devtools-mcp-canister` version: <!-- from Dockerfile ARG -->
 - Chromium version (if known): <!-- docker run ... chromium --version -->
 
 ## Logs

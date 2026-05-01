@@ -1,8 +1,8 @@
 # Versioning
 
-## How the package version is pinned
+## The package version is pinned
 
-The `chrome-devtools-mcp` npm package version is pinned in **three places**,
+The `chrome-devtools-mcp` npm package version is pinned in **four places**,
 all kept in sync by Renovate:
 
 ```
@@ -10,8 +10,11 @@ Containerfile / Dockerfile
     ARG CHROME_DEVTOOLS_MCP_VERSION=0.23.0
 
 docker-compose.yaml
-    image: chrome-devtools-mcp:v0.23.0
-    - CHROME_DEVTOOLS_MCP_VERSION=0.23.0
+      args:
+        - CHROME_DEVTOOLS_MCP_VERSION=0.23.0
+      tags:
+        - chrome-devtools-mcp-canister:v0.23.0
+    image: chrome-devtools-mcp-canister:v0.23.0
 ```
 
 The `image:` tag drives the local tag name produced by `compose build`.
@@ -45,7 +48,7 @@ npm publishes chrome-devtools-mcp@X.Y.Z
 excluded from Renovate via `ignoreDeps: ["debian"]` in `.github/renovate.json`.
 
 Reasons:
-- Bookworm LTS support runs until 2029; there is no urgency.
+- Bookworm LTS support runs until 2029.
 - A base image bump can silently break the NodeSource setup script or the
   `chromium` apt package (package name, shared library versions, or ABI).
 - Any base image upgrade must be tested manually before merging.

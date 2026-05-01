@@ -33,8 +33,8 @@ jobs:
         run: |
           VERSION=$(grep 'ARG CHROME_DEVTOOLS_MCP_VERSION' Dockerfile | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "artifact=chrome-devtools-mcp-v${VERSION}-linux-amd64" >> "$GITHUB_OUTPUT"
-          echo "Building chrome-devtools-mcp:v$VERSION"
+          echo "artifact=chrome-devtools-mcp-canister-v${VERSION}-linux-amd64" >> "$GITHUB_OUTPUT"
+          echo "Building chrome-devtools-mcp-canister:v$VERSION"
 
       - name: Build image
         run: |
@@ -48,8 +48,8 @@ jobs:
             --cache-to   type=gha,mode=max \
             --load \
             --build-arg CHROME_DEVTOOLS_MCP_VERSION="$VERSION" \
-            -t "chrome-devtools-mcp:v$VERSION" \
-            -t chrome-devtools-mcp:latest \
+            -t "chrome-devtools-mcp-canister:v$VERSION" \
+            -t chrome-devtools-mcp-canister:latest \
             .
 
       # Save the image to a tar archive so the test job can load it without
@@ -57,7 +57,7 @@ jobs:
       # Scoped to this workflow run.
       - name: Export image to tar and generate checksum
         run: |
-          docker save chrome-devtools-mcp:latest | gzip > /tmp/image.tar.gz
+          docker save chrome-devtools-mcp-canister:latest | gzip > /tmp/image.tar.gz
           sha256sum /tmp/image.tar.gz > /tmp/image.tar.gz.sha256
           echo "SHA-256: $(cat /tmp/image.tar.gz.sha256)"
 
@@ -108,7 +108,7 @@ jobs:
                   "--shm-size", "2gb",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true",
-                  "chrome-devtools-mcp:latest",
+                  "chrome-devtools-mcp-canister:latest",
               ],
               stdin=subprocess.PIPE,
               stdout=subprocess.PIPE,
@@ -154,7 +154,7 @@ jobs:
                   "--shm-size", "2gb",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
                   "--env", "CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true",
-                  "chrome-devtools-mcp:latest",
+                  "chrome-devtools-mcp-canister:latest",
               ],
               stdin=subprocess.PIPE,
               stdout=subprocess.PIPE,

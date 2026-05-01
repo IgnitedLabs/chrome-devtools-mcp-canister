@@ -23,7 +23,7 @@ Edit `~/.claude.json`
         "run", "--rm", "-i",
         "--shm-size", "2gb",
         "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
-        "chrome-devtools-mcp:latest"
+        "chrome-devtools-mcp-canister:latest"
       ]
     }
   }
@@ -33,7 +33,7 @@ Edit `~/.claude.json`
 ## Claude Code
 
 ```bash
-claude mcp add chrome-devtools '{"command":"docker","args":["run","--rm","-i","-p","127.0.0.1:9222:9222","-v","files_chrome-cache:/home/node/.cache","--shm-size","2gb","--env","CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true","--env","CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true","chrome-devtools-mcp:latest"]}'
+claude mcp add chrome-devtools '{"command":"docker","args":["run","--rm","-i","-p","127.0.0.1:9222:9222","-v","files_chrome-cache:/home/node/.cache","--shm-size","2gb","--env","CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true","--env","CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true","chrome-devtools-mcp-canister:latest"]}'
 ```
 
 ## VS Code (`mcp.json`)
@@ -47,7 +47,7 @@ claude mcp add chrome-devtools '{"command":"docker","args":["run","--rm","-i","-
         "run", "--rm", "-i",
         "--shm-size", "2gb",
         "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
-        "chrome-devtools-mcp:latest"
+        "chrome-devtools-mcp-canister:latest"
       ]
     }
   }
@@ -66,7 +66,7 @@ Go to **Cursor Settings → MCP → New MCP Server** and paste:
     "run", "--rm", "-i",
     "--shm-size", "2gb",
     "--env", "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true",
-    "chrome-devtools-mcp:latest"
+    "chrome-devtools-mcp-canister:latest"
   ]
 }
 ```
@@ -78,7 +78,7 @@ Any MCP client that supports stdio transport can launch:
 ```bash
 docker run --rm -i --shm-size 2gb \
   --env CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true \
-  chrome-devtools-mcp:latest
+  chrome-devtools-mcp-canister:latest
 ```
 
 ## Test MCP server
@@ -88,7 +88,7 @@ printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion
     | docker run --rm -i -p 9224:9222 \
         -v skills_chrome-cache:/home/node/.cache \
         --env CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true \
-        chrome-devtools-mcp:latest \
+        chrome-devtools-mcp-canister:latest \
     2>/dev/null | jq
 ```
 
@@ -104,4 +104,4 @@ docker compose build
 ```
 
 The compose file also tags the versioned image as `:latest` so the
-`chrome-devtools-mcp:latest` reference above always resolves correctly.
+`chrome-devtools-mcp-canister:latest` reference above always resolves correctly.
