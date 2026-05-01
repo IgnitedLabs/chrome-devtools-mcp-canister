@@ -36,7 +36,7 @@ No Node.js required on the host.
 
 ```bash
 # 1. Clone
-git clone https://github.com/<you>/chrome-devtools-mcp-canister.git
+git clone https://github.com/IgnitedLabs/chrome-devtools-mcp-canister.git
 cd chrome-devtools-mcp-canister
 
 # 2. Copy env file (edit CDP_PORT if 9222 is taken)
