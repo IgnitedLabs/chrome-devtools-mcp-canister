@@ -33,8 +33,8 @@ jobs:
         run: |
           VERSION=$(grep 'ARG CHROME_DEVTOOLS_MCP_VERSION' Dockerfile | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "artifact=chrome-devtools-mcp-v${VERSION}-linux-amd64" >> "$GITHUB_OUTPUT"
-          echo "Building chrome-devtools-mcp:v$VERSION"
+          echo "artifact=chrome-devtools-mcp-canister-v${VERSION}-linux-amd64" >> "$GITHUB_OUTPUT"
+          echo "Building chrome-devtools-mcp-canister:v$VERSION"
 
       - name: Build image
         run: |
