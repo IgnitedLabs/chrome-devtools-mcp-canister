@@ -9,7 +9,7 @@
 
   "packageRules": [
     {
-      "matchPackageNames": ["chrome-devtools-mcp"],
+      "matchPackageNames": ["chrome-devtools-mcp-canister"],
       // Auto-merge is controlled by GitHub branch protection (all CI must
       // pass), NOT by Renovate.  Renovate only creates the PR.
       "automerge": false,
@@ -35,7 +35,7 @@
       "matchStrings": [
         "ARG CHROME_DEVTOOLS_MCP_VERSION=(?<currentValue>[\\d.]+)"
       ],
-      "depNameTemplate": "chrome-devtools-mcp",
+      "depNameTemplate": "chrome-devtools-mcp-canister",
       "datasourceTemplate": "npm"
     },
     {
@@ -44,9 +44,9 @@
       "customType": "regex",
       "fileMatch": ["^docker-compose\\.yaml$"],
       "matchStrings": [
-        "image: chrome-devtools-mcp:(?<currentValue>[\\d.]+)"
+        "image: chrome-devtools-mcp-canister:(?<currentValue>[\\d.]+)"
       ],
-      "depNameTemplate": "chrome-devtools-mcp",
+      "depNameTemplate": "chrome-devtools-mcp-canister",
       "datasourceTemplate": "npm"
     },
     {
@@ -57,7 +57,7 @@
       "matchStrings": [
         "- CHROME_DEVTOOLS_MCP_VERSION=(?<currentValue>[\\d.]+)"
       ],
-      "depNameTemplate": "chrome-devtools-mcp",
+      "depNameTemplate": "chrome-devtools-mcp-canister",
       "datasourceTemplate": "npm"
     }
   ]
