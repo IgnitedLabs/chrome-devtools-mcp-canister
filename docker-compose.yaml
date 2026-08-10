@@ -4,11 +4,11 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - CHROME_DEVTOOLS_MCP_VERSION=1.4.0
+        - CHROME_DEVTOOLS_MCP_VERSION=1.7.0
       tags:
         - chrome-devtools-mcp-canister:v0.23.0
         - chrome-devtools-mcp-canister:latest
-    image: chrome-devtools-mcp-canister:v1.4.0
+    image: chrome-devtools-mcp-canister:v1.7.0
     platform: linux/arm64
     stdin_open: true
     tty: false
