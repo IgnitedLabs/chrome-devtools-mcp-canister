@@ -39,16 +39,15 @@ No Node.js required on the host.
 git clone https://github.com/IgnitedLabs/chrome-devtools-mcp-canister.git
 cd chrome-devtools-mcp-canister
 
-# 2. Copy env file (edit CDP_PORT if 9222 is taken)
-cp .env.example .env
-
-# 3. Build and start
-docker compose up --build
+# 2. Build the image
+docker compose build
 ```
 
-The MCP server listens on `stdin/stdout` (stdio transport).
-The Chrome DevTools Protocol (CDP) port is mapped to
-`127.0.0.1:${CDP_PORT}` (default `9222`) for diagnostic use.
+The MCP server itself listens on `stdin/stdout` (stdio transport) and is
+launched per-client — see **[docs/mcp-client-config.md](./docs/mcp-client-config.md)**
+for the two supported patterns (isolated per-client browser vs. one shared
+persistent browser for concurrent sessions). Only the shared pattern needs
+`docker compose up -d`.
 
 ---
 
