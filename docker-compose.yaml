@@ -1,8 +1,12 @@
 services:
   # Persistent, shared Chrome+CDP daemon. This is NOT the MCP server —
-  # it just keeps one headless Chrome alive so every MCP client (one
-  # `chrome-devtools-mcp` process per session, see docs/mcp-client-config.md)
-  # can share the same browser instead of each launching its own.
+  # it just keeps one Chrome alive (behind a virtual display + noVNC, see
+  # scripts/start-vnc-chrome.sh) so every MCP client (one `chrome-devtools-mcp`
+  # process per session, see docs/mcp-client-config.md) can share the same
+  # browser instead of each launching its own. The virtual display exists
+  # so a human can log in to a gated site visually via noVNC
+  # (http://127.0.0.1:6080) — credentials never pass through an MCP client
+  # or an AI agent's context that way.
   #
   # Chrome's DevTools port ignores --remote-debugging-address=0.0.0.0 and
   # always binds 127.0.0.1 only (security hardening, not configurable).
@@ -24,14 +28,13 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     entrypoint:
-      - chromium
-      - --headless
-      - --no-sandbox
-      - --disable-dev-shm-usage
-      - --disable-gpu
-      - --remote-debugging-port=9222
-      - --user-data-dir=/home/node/.cache/chrome-profile
+      - /usr/local/bin/start-vnc-chrome.sh
     shm_size: '2gb'
+    # noVNC, bound to localhost only — x11vnc runs with -nopw (no password).
+    # Never change this to 0.0.0.0; it would let anyone on the LAN drive
+    # this browser (and anything logged in to it) with no auth.
+    ports:
+      - "127.0.0.1:6080:6080"
     environment:
       - CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=true
       - CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true

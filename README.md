@@ -49,6 +49,11 @@ for the two supported patterns (isolated per-client browser vs. one shared
 persistent browser for concurrent sessions). Only the shared pattern needs
 `docker compose up -d`.
 
+The shared pattern also exposes a noVNC viewer (`http://127.0.0.1:6080`) so
+a human can log in to a gated site directly in the real browser window —
+credentials never pass through an MCP client. See "Logging in to a gated
+site" in [docs/mcp-client-config.md](./docs/mcp-client-config.md).
+
 ---
 
 ## MCP client configuration
