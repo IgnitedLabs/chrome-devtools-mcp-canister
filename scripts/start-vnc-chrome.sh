@@ -8,6 +8,14 @@ set -e
 DISPLAY_NUM=:99
 export DISPLAY="$DISPLAY_NUM"
 
+# /tmp is part of the container's own (non-volume) filesystem layer, so a
+# `docker compose up -d` that restarts this same stopped container (rather
+# than recreating it) sees whatever a previous, abruptly-killed Xvfb left
+# behind. A stale lock here makes Xvfb silently refuse to (re)bind :99,
+# which then cascades into "no X server" for x11vnc and Chrome alike. Only
+# one Xvfb ever runs in this container, so it's always safe to clear it.
+rm -f "/tmp/.X${DISPLAY_NUM#:}-lock" "/tmp/.X11-unix/X${DISPLAY_NUM#:}"
+
 # -ac: disable X11 access control so x11vnc (same user, no cookie
 # exchange needed for a single-user container) can attach without an
 # xauth dance.
