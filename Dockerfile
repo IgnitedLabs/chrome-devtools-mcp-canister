@@ -13,8 +13,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --no-install-recommends \
         nodejs \
         chromium \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get purge -y --auto-remove curl gnupg dirmngr
+    && apt-get purge -y --auto-remove curl gnupg dirmngr \
+    && apt-get install -y --no-install-recommends \
+        xvfb \
+        x11vnc \
+        novnc \
+        websockify \
+    && rm -rf /var/lib/apt/lists/*
+
+# Used only by the shared persistent "Pattern B" container (see
+# docker-compose.yaml) to let a human log in to a gated site visually over
+# noVNC — credentials never pass through an MCP client. Not used by the
+# default ENTRYPOINT below (Pattern A, headless, no display).
+COPY --chmod=755 scripts/start-vnc-chrome.sh /usr/local/bin/start-vnc-chrome.sh
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
